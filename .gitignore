@@ -1,0 +1,8 @@
+node_modules/
+build/
+.wrangler/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+.vscode*

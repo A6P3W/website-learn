@@ -1,0 +1,10 @@
+
+{
+  "name": "website-learn-lab",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-10-12",
+  "assets": {
+    "directory": "./public",
+    "run_worker_first": ["/api/*"]
+  }
+}

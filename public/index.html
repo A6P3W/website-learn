@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>My Website</title>
+  </head>
+  <body>
+    <h1>私のWebサイト+a</h1>
+
+    <p id="message">まだクリックしていません。</p>
+    <button id="helloButton">クリック</button>
+
+    <h2>API通信の実験</h2>
+
+    <button id="apiButton">APIを呼び出す</button>
+
+    <p id="apiResult">まだ通信していません。</p>
+    <script>
+      const button = document.getElementById('helloButton');
+      const message = document.getElementById('message');
+
+      button.addEventListener('click', () => {
+        message.textContent = 'JavaScriptが文章を書き換えました！';
+      });
+
+      const apiButton = document.getElementById('apiButton');
+      const apiResult = document.getElementById('apiResult');
+
+      apiButton.addEventListener('click', async () => {
+        apiResult.textContent = '通信中...';
+
+        try {
+          const response = await fetch('/api/hello');
+
+          if (!response.ok) {
+            throw new Error(`HTTPエラー: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          apiResult.textContent = `${data.message} / ${data.time}`;
+        } catch (error) {
+          apiResult.textContent = '通信に失敗しました。';
+          console.error(error);
+        }
+      });
+    </script>
+  </body>
+</html>
