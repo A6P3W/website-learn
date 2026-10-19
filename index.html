@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>My Website</title>
+</head>
+<body>
+    <h1>私のWebサイト</h1>
+
+    <p id="message">まだクリックしていません。</p>
+    <button id="helloButton">クリック</button>
+
+    <script>
+        const button = document.getElementById("helloButton");
+        const message = document.getElementById("message");
+
+        button.addEventListener("click", () => {
+            message.textContent = "JavaScriptが文章を書き換えました！";
+        });
+    </script>
+</body>
+</html>
