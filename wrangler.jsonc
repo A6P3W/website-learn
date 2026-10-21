@@ -1,4 +1,3 @@
-
 {
   "name": "website-learn-lab",
   "main": "./src/index.ts",
@@ -6,5 +5,12 @@
   "assets": {
     "directory": "./public",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "website-learn-db",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
 }
