@@ -15,6 +15,20 @@
     <button id="apiButton">APIを呼び出す</button>
 
     <p id="apiResult">まだ通信していません。</p>
+    <h2>メモアプリ</h2>
+
+    <form id="noteForm">
+      <label for="noteInput">新しいメモ</label>
+
+      <input id="noteInput" type="text" maxlength="500" required />
+
+      <button id="noteSubmit" type="submit">保存</button>
+    </form>
+
+    <p id="noteStatus" aria-live="polite"></p>
+
+    <h3>保存済みメモ</h3>
+    <ul id="notesList"></ul>
     <script>
       const button = document.getElementById('helloButton');
       const message = document.getElementById('message');
@@ -43,6 +57,169 @@
           apiResult.textContent = '通信に失敗しました。';
           console.error(error);
         }
+      });
+
+      const noteForm = document.getElementById('noteForm');
+      const noteInput = document.getElementById('noteInput');
+      const noteSubmit = document.getElementById('noteSubmit');
+      const noteStatus = document.getElementById('noteStatus');
+      const notesList = document.getElementById('notesList');
+
+      // フォーム送信時に実行する
+      noteForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const content = noteInput.value.trim();
+
+        if (content.length === 0) {
+          noteStatus.textContent = 'メモを入力してください。';
+          return;
+        }
+
+        noteSubmit.disabled = true;
+        noteStatus.textContent = '保存中...';
+
+        try {
+          const response = await fetch('/api/notes', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || '保存に失敗しました');
+          }
+
+          noteInput.value = '';
+
+          await loadNotes();
+
+          noteStatus.textContent = '保存しました。';
+        } catch (error) {
+          console.error(error);
+          noteStatus.textContent = '保存または一覧の更新に失敗しました。';
+        } finally {
+          noteSubmit.disabled = false;
+        }
+      });
+
+      // ページを開いたときにメモを読み込む
+
+      async function loadNotes() {
+        const response = await fetch('/api/notes');
+
+        if (!response.ok) {
+          throw new Error(`GET失敗: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        notesList.replaceChildren();
+
+        for (const note of data.notes) {
+          // メモを表示するli要素
+          const li = document.createElement('li');
+
+          const text = document.createElement('span');
+          text.textContent = `${note.content} (${note.created_at})`;
+
+          // 編集ボタン
+          const editButton = document.createElement('button');
+          editButton.type = 'button';
+          editButton.textContent = '編集';
+
+          editButton.addEventListener('click', () => {
+            updateNote(note);
+          });
+
+          // 削除ボタン
+          const deleteButton = document.createElement('button');
+          deleteButton.type = 'button';
+          deleteButton.textContent = '削除';
+
+          deleteButton.addEventListener('click', () => {
+            deleteNote(note);
+          });
+
+          // 3つの要素をliに追加
+          li.append(text, ' ', editButton, ' ', deleteButton);
+
+          notesList.appendChild(li);
+        }
+      }
+
+      async function updateNote(note) {
+        const input = window.prompt('メモを編集してください', note.content);
+
+        if (input === null) {
+          return;
+        }
+
+        const content = input.trim();
+
+        if (content.length === 0 || content.length > 500) {
+          noteStatus.textContent = 'メモは1〜500文字で入力してください。';
+          return;
+        }
+
+        noteStatus.textContent = '更新中...';
+
+        try {
+          const response = await fetch(`/api/notes/${note.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`PATCH失敗: HTTP ${response.status}`);
+          }
+
+          await loadNotes();
+          noteStatus.textContent = '更新しました。';
+        } catch (error) {
+          console.error(error);
+          noteStatus.textContent = '更新または一覧の再取得に失敗しました。';
+        }
+      }
+
+      // 削除処理
+      async function deleteNote(note) {
+        const confirmed = window.confirm(`メモ「${note.content}」を削除しますか？`);
+
+        if (!confirmed) {
+          return;
+        }
+
+        noteStatus.textContent = '削除中...';
+
+        try {
+          const response = await fetch(`/api/notes/${note.id}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            throw new Error(`DELETE失敗: HTTP ${response.status}`);
+          }
+
+          await loadNotes();
+          noteStatus.textContent = '削除しました。';
+        } catch (error) {
+          console.error(error);
+          noteStatus.textContent = '削除または一覧の再取得に失敗しました。';
+        }
+      }
+
+      // ページを開いたらメモ一覧を取得する
+      loadNotes().catch((error) => {
+        console.error(error);
+        noteStatus.textContent = 'メモ一覧の取得に失敗しました。';
       });
     </script>
   </body>
