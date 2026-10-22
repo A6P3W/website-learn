@@ -13,6 +13,66 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // 認証・認可の学習用API
+    if (url.pathname === '/api/auth-demo') {
+      // 設定の不備を確認
+      if (
+        !env.DEMO_READ_TOKEN ||
+        !env.DEMO_WRITE_TOKEN ||
+        env.DEMO_READ_TOKEN === env.DEMO_WRITE_TOKEN
+      ) {
+        return Response.json({ error: 'トークンの設定が不正です' }, { status: 503 });
+      }
+
+      // Authorizationヘッダーを取得
+      const authorization = request.headers.get('Authorization');
+
+      // トークンを確認する
+      const isReader = authorization === `Bearer ${env.DEMO_READ_TOKEN}`;
+
+      const isWriter = authorization === `Bearer ${env.DEMO_WRITE_TOKEN}`;
+
+      // 認証失敗
+      if (!isReader && !isWriter) {
+        return Response.json(
+          { error: '認証が必要です' },
+          {
+            status: 401,
+            headers: {
+              'WWW-Authenticate': 'Bearer realm="auth-demo"',
+            },
+          },
+        );
+      }
+
+      // GETは閲覧者・編集者の両方を許可
+      if (request.method === 'GET') {
+        return Response.json({
+          message: '閲覧を許可しました',
+          role: isWriter ? 'writer' : 'reader',
+        });
+      }
+
+      // POSTは編集者だけを許可
+      if (request.method === 'POST') {
+        if (!isWriter) {
+          return Response.json({ error: '書き込み権限がありません' }, { status: 403 });
+        }
+
+        return Response.json({
+          message: '書き込みを許可しました（学習用：DB変更なし）',
+        });
+      }
+
+      return Response.json(
+        { error: 'Method Not Allowed' },
+        {
+          status: 405,
+          headers: { Allow: 'GET, POST' },
+        },
+      );
+    }
+
     if (url.pathname === '/api/notes') {
       // GET：メモ一覧を取得
       if (request.method === 'GET') {
